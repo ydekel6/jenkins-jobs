@@ -1,0 +1,30 @@
+job('maven-dsl'){
+    description('Recreate a maven job using dsl')
+
+    scm {
+        github('jenkins-docs/simple-java-maven-app', branch='master')
+    }
+    steps {
+        maven{
+            mavenInstallation('jenkins-maven')
+            goals('-B -DskipTests clean package')
+        }
+        maven{
+            mavenInstallation('jenkins-maven')
+            goals('test')
+        }
+        shell('''
+            echo "***************************** RUNNING THE JAR *********************************"
+            java -jar /var/jenkins_home/workspace/maven-job/target/*.jar
+        ''')
+    }
+
+    publishers {
+        archiveJunit('target/surefire-reports/*.xml'){
+            healthScaleFactor(1.0)
+        }
+        publishBuild {
+            discardOldBuilds(daysToKeep =-1, numToKeep = 4, artifactDaysToKeep = -1 , artifactNumToKeep = -1)
+        }
+    }
+}
